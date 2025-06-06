@@ -1,5 +1,6 @@
 mod menu_build;
 mod db;
+mod ssh_client;
 
 use db::config::*;
 use menu_build::build_menu;
@@ -22,6 +23,7 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             greet,
             test_connection,
+            save_config,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
