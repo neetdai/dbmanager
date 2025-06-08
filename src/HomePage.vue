@@ -2,6 +2,7 @@
 import { onBeforeUnmount, onMounted, Ref, ref } from "vue";
 import { invoke } from "@tauri-apps/api/core";
 import  NavContainer from "./db_nav/NavContainer.vue";
+import { ConnectionConfig } from "./db_config";
 
 // const greetMsg = ref("");
 // const name = ref("");
@@ -12,6 +13,11 @@ import  NavContainer from "./db_nav/NavContainer.vue";
 //   greetMsg.value = await invoke("greet", { name: name.value });
 // }
 
+const configs: Ref<ConnectionConfig[]> = ref([]);
+const get_configs_list = async (): Promise<ConnectionConfig[]> => {
+  return await invoke("get_db_configs");
+}
+
 const currentHeight: Ref<number> = ref(window.innerHeight);
 
 function resizeHeight() {
@@ -20,6 +26,9 @@ function resizeHeight() {
 
 onMounted(() => {
   window.addEventListener('resize', resizeHeight);
+  get_configs_list().then((list) => {
+    configs.value = list;
+  })
 });
 
 onBeforeUnmount(() => {
@@ -40,7 +49,8 @@ onBeforeUnmount(() => {
       <!-- <v-navigation-drawer :rail="rail" @click="toggleRail"> -->
       <NavContainer>
         <v-list nav>
-          <v-list-item title="Navigation drawer" link></v-list-item>
+          <v-list-item title="home"></v-list-item>
+          <v-list-item v-for="config in configs" :title="config.host" link></v-list-item>
         </v-list>
       </NavContainer>
       <!-- </v-navigation-drawer> -->

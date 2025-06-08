@@ -2,7 +2,7 @@ use serde::{Deserialize, Serialize};
 use tauri::{command, Runtime};
 use std::path::PathBuf;
 use crate::ssh_client;
-use tokio::{fs::{File, OpenOptions}, io::AsyncWriteExt};
+use tokio::{fs::{File, OpenOptions}, io::{AsyncReadExt, AsyncWriteExt}};
 use super::{db_trait::DBAdaptorTrait, mysql::MysqlAdapter};
 
 
@@ -54,7 +54,7 @@ pub async fn test_connection(config: DataBaseConfig) -> Result<(), String> {
 
 #[tauri::command]
 pub async fn save_config(config: DataBaseConfig) -> Result<(), String> {
-    let config_path = PathBuf::from(format!("../{}.json", config.database_name));
+    let config_path = PathBuf::from(format!("../db_configs/{}.json", config.database_name));
     dbg!(&config_path);
     let mut file = OpenOptions::new()
         .create_new(true)
@@ -65,4 +65,21 @@ pub async fn save_config(config: DataBaseConfig) -> Result<(), String> {
     let content = serde_json::to_string(&config).map_err(|e| e.to_string())?;
     file.write_all(content.as_bytes()).await.map_err(|e| e.to_string())?;
     Ok(())
+}
+
+#[tauri::command]
+pub async fn get_db_configs() -> Result<Vec<DataBaseConfig>, String> {
+    let mut configs = Vec::new();
+    let config_path = PathBuf::from("../db_configs");
+    let mut entries = tokio::fs::read_dir(config_path).await.map_err(|e| e.to_string())?;
+    while let Some(entry) = entries.next_entry().await.map_err(|e| e.to_string())? {
+        let path = entry.path();
+        let mut file = File::open(path).await.map_err(|e| e.to_string())?;
+        let mut buf = Vec::new();
+        file.read_to_end(&mut buf).await.map_err(|e| e.to_string())?;
+        let config: DataBaseConfig = serde_json::from_reader(buf.as_slice()).map_err(|e| e.to_string())?;
+        configs.push(config);
+    }
+
+    Ok(configs)
 }

@@ -24,6 +24,7 @@ pub fn run() {
             greet,
             test_connection,
             save_config,
+            get_db_configs,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
